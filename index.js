@@ -1,6 +1,7 @@
 const express = require('express');
 const app = express();
 const server = require('http').createServer(app);
+const port = process.env.PORT || 3000;
 const io = require('socket.io')(server, {
     cors: {
         origin: '*',
@@ -57,6 +58,6 @@ io.of("/games").on("connection", (socket)=>{
 
 });
 
-server.listen(80, () => {
-  console.log(`Server running at: 80`);
+server.listen(port, () => {
+  console.log(`Server running at: ${port}`);
 });
