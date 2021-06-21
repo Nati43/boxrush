@@ -18,16 +18,23 @@ io.of("/games").on("connection", (socket)=>{
 
     socket.on('createRoom', (data)=>{
         const roomID = data.cols+'-'+data.rows+'-'+socket.id;
-        activeRooms.push(roomID);
-        socket.join(roomID);
+        // activeRooms.push(roomID);
+        activeRooms[roomID] = { 
+            roomID: roomID,
+            players: [],
+            count: 0,
+        }
+        // socket.join(roomID);
         socket.emit("roomCreated", roomID);
         console.log("CreatedRoom: ", roomID);
     });
 
-    socket.on("join", (rid)=>{
-        if(activeRooms.includes(rid)) {
-            socket.join(rid);
-            io.of('/games').in(rid).emit("joined");
+    socket.on("join", (data)=>{
+        if(activeRooms[data.roomID]) {
+            socket.join(data.roomID);
+            activeRooms[data.roomID].count++;
+            activeRooms[data.roomID].players.push(data.name);
+            io.of('/games').in(data.roomID).emit("joined", activeRooms[data.roomID]);
         }else{
             socket.emit("joinError", "The link has expired.");
         }
