@@ -1,23 +1,29 @@
-const server = require('http').createServer();
-
-const port = 3000;
+const express = require('express');
+const app = express();
+const server = require('http').createServer(app);
 const io = require('socket.io')(server, {
     cors: {
-      origin: '*',
+        origin: '*',
     }
 });
 
-const activeRooms = [];
+// Serve static files (i.e front-end build)
+console.log("Serving static assets...");
+app.use(express.static('public'));
 
+// Active game rooms
+const activeRooms = [];
+// Socket events
 io.of("/games").on("connection", (socket)=>{
 
     socket.on('createRoom', (data)=>{
-        const roomID = data.cols+'-'+data.rows+'-'+socket.id
+        const roomID = data.cols+'-'+data.rows+'-'+socket.id;
         activeRooms.push(roomID);
         socket.join(roomID);
         socket.emit("roomCreated", roomID);
+        console.log("CreatedRoom: ", roomID);
     });
-    
+
     socket.on("join", (rid)=>{
         if(activeRooms.includes(rid)) {
             socket.join(rid);
@@ -44,6 +50,6 @@ io.of("/games").on("connection", (socket)=>{
 
 });
 
-server.listen(port, () => {
-  console.log(`Server running at: ${port}`);
+server.listen(3000, () => {
+  console.log(`Server running at: 3000`);
 });
