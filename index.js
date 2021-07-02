@@ -22,33 +22,48 @@ io.of("/games").on("connection", (socket)=>{
         // activeRooms.push(roomID);
         activeRooms[roomID] = { 
             roomID: roomID,
+            numberOfPlayers: data.numberOfPlayers,
             players: [],
             count: 0,
+            turn: 1,
         }
-        // socket.join(roomID);
         socket.emit("roomCreated", roomID);
         console.log("CreatedRoom: ", roomID);
     });
 
     socket.on("join", (data)=>{
         if(activeRooms[data.roomID]) {
-            socket.join(data.roomID);
             activeRooms[data.roomID].count++;
-            activeRooms[data.roomID].players.push(data.name);
-            io.of('/games').in(data.roomID).emit("joined", activeRooms[data.roomID]);
+            if(activeRooms[data.roomID].count <= activeRooms[data.roomID].numberOfPlayers) {
+                socket.join(data.roomID);
+                activeRooms[data.roomID].players.push({id: activeRooms[data.roomID].count, name:data.name});
+                socket.emit("id", activeRooms[data.roomID].count);
+                io.of('/games').in(data.roomID).emit("joined", activeRooms[data.roomID]);
+                if(activeRooms[data.roomID].count == activeRooms[data.roomID].numberOfPlayers)
+                    io.of('/games').in(data.roomID).emit("start");
+            }else{
+                socket.emit("joinError", "The game is full.");
+            }
         }else{
             socket.emit("joinError", "The link has expired.");
         }
     });
 
+    socket.on('next', (roomID)=>{
+        activeRooms[roomID].turn++;
+        if(activeRooms[roomID].turn > activeRooms[roomID].count)
+            activeRooms[roomID].turn = 1;
+        io.of('/games').in(roomID).emit('turn', activeRooms[roomID].turn);
+    });
+
     socket.on('markX', (marked)=>{
         console.log("Marked: ", marked);
-        io.of('/games').in(marked.roomID).emit('markedX', marked);
+        io.of('/games').to(marked.roomID).emit('markedX', marked);
     });
     
     socket.on('markY', (marked)=>{
         console.log("Marked: ", marked);
-        io.of('/games').in(marked.roomID).emit('markedY', marked);
+        io.of('/games').to(marked.roomID).emit('markedY', marked);
     });
     
     socket.on('win', (data)=>{
