@@ -11,7 +11,7 @@ import { Server, Socket } from 'socket.io';
 // Active game rooms
 const activeRooms = [];
 
-@WebSocketGateway({namespace: 'games'})
+@WebSocketGateway({namespace: 'games',cors: true})
 export class GamesGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
@@ -40,7 +40,10 @@ export class GamesGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
         turn: 1,
     }
     client.emit("roomCreated", roomID);
-    console.log(`CreatedRoom: ${roomID}`);
+    client.emit("message", {
+      name: 'BoxRush',
+      message: 'Room created!'
+    });
   }
 
   @SubscribeMessage('join')
@@ -51,10 +54,12 @@ export class GamesGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
           client.join(data.roomID);
           activeRooms[data.roomID].players.push({id: activeRooms[data.roomID].count, name:data.name});
           client.emit("id", activeRooms[data.roomID].count);
-          // io.of('/games').in(data.roomID).emit("joined", activeRooms[data.roomID]);
           this.server.in(data.roomID).emit("joined", activeRooms[data.roomID]);
+          this.server.to(data.roomID).emit("message", {
+            name: "BoxRush", 
+            message: `${data.name} joined the game`
+          });
           if(activeRooms[data.roomID].count == activeRooms[data.roomID].numberOfPlayers)
-              // io.of('/games').in(data.roomID).emit("start");
               this.server.in(data.roomID).emit("start");
       }else{
           client.emit("joinError", "The game is full.");
@@ -62,6 +67,14 @@ export class GamesGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
     }else{
         client.emit("joinError", "The link has expired.");
     }
+  }
+
+  @SubscribeMessage('send')
+  handleSend(client: Socket, data: any) {
+    this.server.to(data.roomID).emit("message", {
+      name: data.name,
+      message: data.message
+    });
   }
 
   @SubscribeMessage('next')
