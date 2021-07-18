@@ -82,6 +82,7 @@ export class GamesGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
   @SubscribeMessage('send')
   handleSend(client: Socket, data: any) {
     this.server.to(data.roomID).emit("message", {
+      id: data.id,
       name: data.name,
       message: data.message
     });
