@@ -28,7 +28,17 @@ export class GamesGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
     console.log(`Client disconnected: ${client.id}`);
     // Perform clean-up
   }
+
+  @SubscribeMessage('start_typing')
+  handleStartTyping(client: Socket, data: any) {
+    this.server.to(data.roomID).emit("start_typing", data);
+  }
   
+  @SubscribeMessage('stop_typing')
+  handleStopTyping(client: Socket, data: any) {
+    this.server.to(data.roomID).emit("stop_typing", data);
+  }
+
   @SubscribeMessage('createRoom')
   handleCreate(client: Socket, data: any) {
     const roomID = data.cols+'-'+data.rows+'-'+client.id;
