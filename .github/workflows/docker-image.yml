@@ -1,0 +1,29 @@
+name: Build and Push to GHCR
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
+
+    - name: Log in to GitHub Container Registry
+      run: echo ${{ secrets.RA_TOKEN }} | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
+    
+    - name: Build Docker Image
+      run: docker build -t ghcr.io/${{ github.repository_owner }}/${{ github.repository }}:latest .
+      env:
+        DOCKER_BUILDKIT: 1
+    
+    - name: Push Docker Image
+      run: |
+        docker push ghcr.io/${{ github.repository_owner }}/${{ github.repository }}:latest
