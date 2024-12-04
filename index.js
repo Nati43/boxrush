@@ -71,6 +71,23 @@ io.of("/games").on("connection", (socket)=>{
         io.of('/games').in(data.roomID).emit('winner', data);
     });
 
+    // typing start event
+    socket.on('start_typing', (payload)=>{
+        io.of('/games').in(payload.roomID).emit("start_typing", payload);
+        
+    });
+    // typing stop event
+    socket.on('stop_typing', (payload)=>{
+        io.of('/games').in(payload.roomID).emit("stop_typing", payload);
+    });
+    // message event
+    socket.on('send', (payload)=>{
+        io.of('/games').in(payload.roomID).emit("message", {
+          id: payload.id,
+          name: payload.name,
+          message: payload.message
+        });
+    });
 });
 
 server.listen(port, () => {
